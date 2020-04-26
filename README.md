@@ -1,2 +1,2 @@
-# seqdepth
-Code and notebooks to reproduce seqdepth preprint
+# seqdepth2020
+Working scripts for seqdepth2020
