@@ -15,22 +15,23 @@ import datetime
 
 # load the 10xv3 results with 30x sampling for each cell/depth combination
 dfs={}
-for item in glob.glob('./10xv3_final_summaries/*'):
-    dfs[item.split('/')[2].split('-final_summary.csv')[0]] = pd.read_csv(item).sort_values(["sampled_cells", "total_UMIs"], ascending = (True, True))
+for item in glob.glob('./scvi_output/10xv3_final_summaries/*'):
+    dfs[item.split('/')[3].split('-final_summary.csv')[0]] = pd.read_csv(item).sort_values(["sampled_cells", "total_UMIs"], ascending = (True, True))
 
+print(dfs.keys())
 stan_model = ps.StanModel(file="./stan_models/seqdepth_2predictors_piecewise_v5.stan", 
                           model_name = "seqdepth_2s_piecewise")
 
 
 
-results_folder='./results6/'
+results_folder='./pystan_results/'
 # for dataset in dfs:
 
 # set environmental variable STAN_NUM_THREADS
 # Use 4 cores per chain
 os.environ['STAN_NUM_THREADS'] = "10"
 
-for dataset in tqdm(['10x_genomics_data-neuron_1k_v3']):
+for dataset in tqdm(['10x_genomics_data-pbmc_1k_v3']):
     print(dataset)
     begin = datetime.datetime.now()
     print ("Start fit time : ")
@@ -48,10 +49,10 @@ for dataset in tqdm(['10x_genomics_data-neuron_1k_v3']):
                            iter=25000,
                             warmup = 15000,
 #                             n_jobs=10,
-                            chains=2,
+                            chains=3,
                             refresh = 10,
                             verbose=True,
-                          control={'adapt_delta':0.8, 'max_treedepth': 12},
+                          control={'adapt_delta':0.8, 'max_treedepth': 15},
                                   )
     print(stan_model.model_code)
     print ("Finished fit time: ")
@@ -85,7 +86,7 @@ for dataset in tqdm(['10x_genomics_data-neuron_1k_v3']):
 
                               ]
                     )
-    plt.savefig(results_folder + dataset+'-'+ str(now.strftime("%Y-%m-%d_%H:%M:%S")) +'.png',format='png',dpi=200)
+    plt.savefig(results_folder + dataset+'-'+ str(now.strftime("%Y-%m-%d_%H:%M:%S")) +'.png',format='png',dpi=80)
 
 
     full_stan_results = stan_fit.to_dataframe()
