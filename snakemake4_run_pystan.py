@@ -17,7 +17,7 @@ import requests
 # --output=%j.out
 # snakemake -j 1 -s snakemake4_run_pystan.py --keep-going --rerun-incomplete -pn
 # snakemake -j 100 -s snakemake4_run_pystan.py --keep-going --rerun-incomplete --latency-wait 50 --cluster "sbatch -A lpachter -t 500  -o ./logs/output.%a.out "
-# snakemake -j 300 -s snakemake4_run_pystan.py --keep-going --rerun-incomplete --latency-wait 50 --cluster "sbatch -A lpachter -t 500   --output=./logs/snakemake4_run_pystan%j.logs"
+# snakemake -j 300 -s snakemake4_run_pystan.py --keep-going --rerun-incomplete --latency-wait 50 --cluster "sbatch -A lpachter -t 5000   --output=./logs/snakemake4_run_pystan%j.logs"
 
 
 url="https://docs.google.com/spreadsheets/d/"+ \
@@ -48,6 +48,7 @@ rule run_pystan:
     params:
         results_folder='./pystan_results/',
     
+    threads: 4
     run:
         ds = wildcards.dataset_sample_id
         dataset = ds
@@ -55,16 +56,10 @@ rule run_pystan:
         
         print('   💙 💙 💙 💙    PYSTAN PROCESSING DATASET: ', ds, ' PROJECT: ', project, '   💙 💙 💙 💙   ')
         df = pd.read_csv(input.scvi_final_summary_file).sort_values(["sampled_cells", "total_UMIs"], ascending = (True, True))
-
-
         
         stan_model = ps.StanModel(file="piecewise_stan_model.stan", 
                           model_name = "piecewise_stan_model")
 
-        # for dataset in dfs:
-
-        # set environmental variable STAN_NUM_THREADS
-        # Use 4 cores per chain
         os.environ['STAN_NUM_THREADS'] = "10"
 
         print(dataset)
@@ -76,11 +71,11 @@ rule run_pystan:
 
 
         stan_fit = stan_model.sampling(data=data_dict,
-                               iter=25000,
-                                warmup = 15000,
+                               iter=10000,
+#                                 warmup = 15000,
                                 n_jobs=4,
                                 chains=4,
-                                refresh = 10,
+                                refresh = 100,
                                 verbose=True,
                               control={'adapt_delta':0.8, 'max_treedepth': 15},
                                       )
