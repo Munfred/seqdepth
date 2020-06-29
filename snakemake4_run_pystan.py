@@ -54,7 +54,7 @@ rule run_pystan:
         dataset = ds
         project = wildcards.dataset_project_id
         
-        print('   💙 💙 💙 💙    PYSTAN PROCESSING DATASET: ', ds, ' PROJECT: ', project, '   💙 💙 💙 💙   ')
+        print('   💝 💝 💝 💝 💝    PYSTAN PROCESSING DATASET: ', ds, ' PROJECT: ', project, '   💝 💝 💝 💝 💝    ')
         df = pd.read_csv(input.scvi_final_summary_file).sort_values(["sampled_cells", "total_UMIs"], ascending = (True, True))
         
         stan_model = ps.StanModel(file="piecewise_stan_model.stan", 
@@ -64,7 +64,7 @@ rule run_pystan:
 
         print(dataset)
         begin = datetime.datetime.now()
-        print ("Start fit time : ")
+        print ("🧡 🧡 🧡 🧡 🧡 Start fit time : 🧡 🧡 🧡 🧡 🧡 ")
         print (begin.strftime("%Y-%m-%d %H:%M:%S"))
 
         data_dict = {"ncells": np.log2(df["sampled_cells"]), "umis_per_cell": np.log2(df["UMIs_per_cell"]), "validation_error": np.log2(df["validation_error"]), "N": len(df)}
@@ -77,10 +77,10 @@ rule run_pystan:
                                 chains=4,
                                 refresh = 100,
                                 verbose=True,
-                              control={'adapt_delta':0.8, 'max_treedepth': 15},
+                              control={'adapt_delta':1, 'max_treedepth': 20},
                                       )
-        print(stan_model.model_code)
-        print ("Finished fit time: ")
+#         print(stan_model.model_code)
+        print ('💚 💚 💚 💚 💚 Finished ', project, '-', ds, '  fit time: 💚 💚 💚 💚 💚')
         now = datetime.datetime.now()
         print (now.strftime("%Y-%m-%d %H:%M:%S"))
         print('Time taken:')
@@ -95,7 +95,7 @@ rule run_pystan:
 
 
         arviz.plot_trace(stan_fit,['intercept',
-                                   'bp_1d',
+                                   'bp',
                                    'bp_umis',
                                    'before_variance',
                                    'after_variance',
@@ -119,12 +119,13 @@ rule run_pystan:
         summary_text = str(summary_head.round(3))
 
         extracted = stan_fit.extract()
-        full_stan_results.to_csv(params.results_folder + project + '-' + dataset + str(now.strftime("_%Y-%m-%d_%H:%M:%S")) + 'pystan_result_full.csv')
+        full_stan_results.to_csv(params.results_folder + project + '-' + dataset + str(now.strftime("+%Y-%m-%d_%H:%M:%S")) + 'pystan_result_full.csv')
         
-        summary.to_csv(params.results_folder + project + '-' + dataset + str(now.strftime("_%Y-%m-%d_%H:%M:%S")) + 'pystan_result_summary.csv')
+        summary.to_csv(params.results_folder + project + '-' + dataset + str(now.strftime("+%Y-%m-%d_%H:%M:%S")) + 'pystan_result_summary.csv')
 
         print ("Done! Current date and time : ")
         print (now.strftime("%Y-%m-%d %H:%M:%S"))
+        print('   💙 💙 💙 💙 💙    PROCESSED: ', project, '-', ds, '   💙 💙 💙 💙 💙  ')
         
         summary.to_csv(output.pystan_success_indicator_file)
 

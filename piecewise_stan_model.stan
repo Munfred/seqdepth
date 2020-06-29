@@ -16,7 +16,7 @@ parameters {
   real umi_slope_after;                   // umi slope after the breakpoint
   real <upper = 0>  cell_slope_before;   // cells slope before the breakpoint
   real cell_slope_after;                  // cells slope after the breakpoint
-  real <lower = 1> bp_1d;                                // the breakpoint: the number of UMIs at which saturation begins
+  real <lower = 1> bp;                                // the breakpoint: the number of UMIs at which saturation begins
   real<lower = 0> before_variance;        // standard deviation of residuals error before the breakpoint
   real<lower = 0> after_variance;         // standard deviation of residuals  error after the breakpoint
   // real bp_intercept;                      // a constant to the breakpoint boundary equation so it doesnt need to touch 0
@@ -28,12 +28,12 @@ transformed parameters{
   // conditional_mean depends on whether umis per cell is before or after bp, the breakpoint
 
   for (i in 1:N) {
-    if (umis_per_cell[i] < bp_1d) { // breakpoint only depends on UMIs
+    if (umis_per_cell[i] < bp) { // breakpoint only depends on UMIs
 
     //if (umis_per_cell[i] + bp_intercept < bp*ncells[i]) { // breakpoint equation
-      conditional_mean[i] = intercept + umi_slope_before * (umis_per_cell[i] - bp_1d) + cell_slope_before * ncells[i];
+      conditional_mean[i] = intercept + umi_slope_before * (umis_per_cell[i] - bp) + cell_slope_before * ncells[i];
     } else {
-      conditional_mean[i] = intercept + umi_slope_after * (umis_per_cell[i] - bp_1d) + cell_slope_after * ncells[i];
+      conditional_mean[i] = intercept + umi_slope_after * (umis_per_cell[i] - bp) + cell_slope_after * ncells[i];
     }
   }
 }
@@ -49,7 +49,7 @@ model {
   cell_slope_after ~ normal(0, 0.2);   // cell slope  breakpoint
   umi_slope_before ~ normal(0, 0.2);  // umi slope before breakpoint
   umi_slope_after ~ normal(0, 0.2);   // umi slope  breakpoint
-  bp_1d ~ normal(10, 2);           // Breakpoint at which saturation begins pretty wide, but around 1000-8000 umis per cell
+  bp ~ normal(10, 2);           // Breakpoint at which saturation begins pretty wide, but around 1000-8000 umis per cell
   before_variance ~ normal(0, 0.2);        // Residual error before the breakpoint, 
   // stdev in validation error for 30 replicates across datasets ranges between 400 to 8, 300 sounds reasonable here
   after_variance ~ normal(0, 0.2);        // Residual error after the breakpoint
@@ -60,7 +60,7 @@ model {
   for (i in 1:N) {
     //validation_error[i] ~ normal(conditional_mean[i], error);
     // if (umis_per_cell[i] + bp_intercept < bp*ncells[i]) { // breakpoint equation
-    if (umis_per_cell[i] < bp_1d) { // breakpoint only depends on UMIs
+    if (umis_per_cell[i] < bp) { // breakpoint only depends on UMIs
       validation_error[i] ~ normal(conditional_mean[i], before_variance);
     } else {
       validation_error[i] ~ normal(conditional_mean[i], after_variance);
@@ -76,9 +76,20 @@ generated quantities {
   real umi_slope_difference;      // the difference between slope_after and slope_before
   real umi_after_over_before;      // the ratio between slope_after / slope_before
   real umi_before_over_after;      // the ratio between slope_after / slope_before
+  
+  real cell_slope_before_percent; 
+  real cell_slope_after_percent; 
+  real umi_slope_before_percent; 
+  real umi_slope_after_percent; 
   real bp_umis;               // the breakpoint raised to power 2 to get UMIs and not log2(umis)
+  
 
-  bp_umis = pow(2,bp_1d);
+  bp_umis = pow(2,bp);
+  cell_slope_before_percent = 1 - pow(2,cell_slope_before);
+  cell_slope_after_percent = 1 - pow(2,cell_slope_after);
+  umi_slope_before_percent = 1 - pow(2,umi_slope_before);
+  umi_slope_after_percent = 1 - pow(2,umi_slope_after);
+  
   cell_slope_difference =  cell_slope_after -  cell_slope_before;  
   cell_after_over_before = cell_slope_after /  cell_slope_before;  
   cell_before_over_after = cell_slope_before / cell_slope_after;  
