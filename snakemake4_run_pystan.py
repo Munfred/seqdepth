@@ -16,8 +16,8 @@ import requests
 
 # --output=%j.out
 # snakemake -j 1 -s snakemake4_run_pystan.py --keep-going --rerun-incomplete -pn
-# snakemake -j 100 -s snakemake4_run_pystan.py --keep-going --rerun-incomplete --latency-wait 50 --cluster "sbatch -A lpachter -t 500  -o ./logs/output.%a.out "
-# snakemake -j 300 -s snakemake4_run_pystan.py --keep-going --rerun-incomplete --latency-wait 50 --cluster "sbatch -A lpachter -t 5000   --output=./logs/snakemake4_run_pystan%j.logs"
+# snakemake -j 100 -s snakemake4_run_pystan.py --keep-going --rerun-incomplete --latency-wait 50 --cluster "sbatch -A lpachter -t 500  -o ./logs/output.%a.pystan "
+# snakemake -j 300 -s snakemake4_run_pystan.py --jobname "{wildcards.dataset_project_id}.{wildcards.dataset_sample_id}.{jobid}" --keep-going --rerun-incomplete --latency-wait 50 --cluster "sbatch -A lpachter -t 5000  --mem-per-cpu=20200 --output=./logs/snakemake4_run_pystan%j.logs"
 
 
 url="https://docs.google.com/spreadsheets/d/"+ \
@@ -48,7 +48,7 @@ rule run_pystan:
     params:
         results_folder='./pystan_results/',
     
-    threads: 4
+    threads: 8
     run:
         ds = wildcards.dataset_sample_id
         dataset = ds
@@ -71,11 +71,12 @@ rule run_pystan:
 
 
         stan_fit = stan_model.sampling(data=data_dict,
-                               iter=10000,
+                               iter=20000,
 #                                 warmup = 15000,
-                                n_jobs=4,
-                                chains=4,
-                                refresh = 100,
+                                n_jobs=8,
+                                chains=8,
+                                thin=5, # I was getting problems with autocorrelation with thin=1...
+                                refresh = 200,
                                 verbose=True,
                               control={'adapt_delta':1, 'max_treedepth': 20},
                                       )
@@ -111,7 +112,7 @@ rule run_pystan:
                                     'umi_before_over_after', 
                                   ]
                         )
-        plt.savefig(params.results_folder + dataset+'-'+ str(now.strftime("%Y-%m-%d_%H:%M:%S")) +'.png',format='png',dpi=80)
+        plt.savefig(params.results_folder + project + '-' + dataset + str(now.strftime("+%Y-%m-%d_%H:%M:%S")) +'.png',format='png',dpi=80)
 
 
         full_stan_results = stan_fit.to_dataframe()
@@ -119,9 +120,9 @@ rule run_pystan:
         summary_text = str(summary_head.round(3))
 
         extracted = stan_fit.extract()
-        full_stan_results.to_csv(params.results_folder + project + '-' + dataset + str(now.strftime("+%Y-%m-%d_%H:%M:%S")) + 'pystan_result_full.csv')
+        full_stan_results.to_csv(params.results_folder + project + '-' + dataset + str(now.strftime("+%Y-%m-%d_%H:%M:%S+")) + 'pystan_result_full.csv')
         
-        summary.to_csv(params.results_folder + project + '-' + dataset + str(now.strftime("+%Y-%m-%d_%H:%M:%S")) + 'pystan_result_summary.csv')
+        summary.to_csv(params.results_folder + project + '-' + dataset + str(now.strftime("+%Y-%m-%d_%H:%M:%S+")) + 'pystan_result_summary.csv')
 
         print ("Done! Current date and time : ")
         print (now.strftime("%Y-%m-%d %H:%M:%S"))

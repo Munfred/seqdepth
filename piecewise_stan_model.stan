@@ -49,7 +49,7 @@ model {
   cell_slope_after ~ normal(0, 0.2);   // cell slope  breakpoint
   umi_slope_before ~ normal(0, 0.2);  // umi slope before breakpoint
   umi_slope_after ~ normal(0, 0.2);   // umi slope  breakpoint
-  bp ~ normal(10, 2);           // Breakpoint at which saturation begins pretty wide, but around 1000-8000 umis per cell
+  bp ~ normal(13, 1.5);           // Breakpoint at which saturation begins pretty wide, but around 1000-8000 umis per cell
   before_variance ~ normal(0, 0.2);        // Residual error before the breakpoint, 
   // stdev in validation error for 30 replicates across datasets ranges between 400 to 8, 300 sounds reasonable here
   after_variance ~ normal(0, 0.2);        // Residual error after the breakpoint

@@ -13,6 +13,10 @@ import numpy as np
 # squeue -u edaveiga | grep snakejob | awk '{print $1}' | xargs -n 1 scancel
 # kb count -i ~/data/references/mus_musculus-ensembl-96/transcriptome.idx -g ~/data/references/mus_musculus-ensembl-96/transcripts_to_genes.txt -x 10xv3 -o out2 ~/data/10x_genomics_data/heart_1k_v3/heart_1k_v3_R1_concat_1.fastq.gz ~/data/10x_genomics_data/heart_1k_v3/heart_1k_v3_R2_concat_2.fastq.gz 
 
+# snakemake -j 300 -s snakemake1_kb_subsampling.py --jobname "{wildcards.dataset_project_id}.{wildcards.dataset_sample_id}.{wildcards.sub}.{jobid}" --keep-going --rerun-incomplete --latency-wait 50 --cluster "sbatch -A lpachter -t 500   --output=./logs/slurm13_%j.kb" --verbose
+
+
+# --jobname "{wildcards.dataset_project_id}.{wildcards.dataset_sample_id}.{jobid}" 
 THREAD = 1
 REF_PATH = '~/data/references'
 # how to call kallisto
