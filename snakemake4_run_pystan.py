@@ -67,11 +67,11 @@ rule run_pystan:
         print ("🧡 🧡 🧡 🧡 🧡 Start fit time : 🧡 🧡 🧡 🧡 🧡 ")
         print (begin.strftime("%Y-%m-%d %H:%M:%S"))
 
-        data_dict = {"ncells": np.log2(df["sampled_cells"]), "umis_per_cell": np.log2(df["UMIs_per_cell"]), "validation_error": np.log2(df["validation_error"]), "N": len(df)}
+        data_dict = {"ncells": df["sampled_cells"], "umis_per_cell": df["UMIs_per_cell"], "validation_error": df["validation_error"], "N": len(df)}
 
 
         stan_fit = stan_model.sampling(data=data_dict,
-                               iter=20000,
+                               iter=10000,
 #                                 warmup = 15000,
                                 n_jobs=8,
                                 chains=8,
@@ -104,12 +104,6 @@ rule run_pystan:
                                    'umi_slope_after',
                                    'cell_slope_before',
                                    'cell_slope_after',                               
-                                    'cell_slope_difference',
-                                    'cell_after_over_before',
-                                    'cell_before_over_after',
-                                    'umi_slope_difference', 
-                                    'umi_after_over_before', 
-                                    'umi_before_over_after', 
                                   ]
                         )
         plt.savefig(params.results_folder + project + '-' + dataset + str(now.strftime("+%Y-%m-%d_%H:%M:%S")) +'.png',format='png',dpi=80)
