@@ -25,6 +25,9 @@ parameters {
 // Functions of estimated parameters.
 transformed parameters{
 
+  vector[N] conditional_mean; // the estimated average validation_error for each observation
+  // conditional_mean depends on whether umis per cell is before or after bp, the breakpoint
+
   // log2 transformed data for centering and scaling
   real log2_validation_error[N];   
   real log2_umis_per_cell[N]; 
@@ -54,13 +57,13 @@ transformed parameters{
   sd_log2_umis_per_cell = sd(log2_umis_per_cell);
   sd_log2_ncells = sd(log2_ncells);
 
-  standardized_log2_validation_error = (log2_validation_error -  mean_log2_validation_error)/sd_log2_validation_error ;
-  standardized_log2_umis_per_cell = (log2_umis_per_cell  -  mean_log2_umis_per_cell )/sd_log2_umis_per_cell ;
-  standardized_log2_ncells = (log2_ncells -  mean_log2_ncells)/sd_log2_ncells ;
+  // loops over the vectors to calculate the standardized varaibles
+  for (i in 1:N) {
+    standardized_log2_validation_error[i] = (log2_validation_error[i] -  mean_log2_validation_error)/sd_log2_validation_error ;
+    standardized_log2_umis_per_cell[i] = (log2_umis_per_cell[i]  -  mean_log2_umis_per_cell )/sd_log2_umis_per_cell ;
+    standardized_log2_ncells[i] = (log2_ncells[i] -  mean_log2_ncells)/sd_log2_ncells ;
+  }
 
-
-  vector[N] conditional_mean; // the estimated average validation_error for each observation
-  // conditional_mean depends on whether umis per cell is before or after bp, the breakpoint
 
   for (i in 1:N) {
     if (umis_per_cell[i] < bp) { // breakpoint only depends on UMIs
@@ -116,6 +119,12 @@ generated quantities {
   real cell_slope_after_percent; 
   real umi_slope_before_percent; 
   real umi_slope_after_percent; 
+  
+  real cell_slope_before_destandardized; 
+  real cell_slope_after_destandardized; 
+  real umi_slope_before_destandardized; 
+  real umi_slope_after_destandardized; 
+  
   real bp_umis;               // the breakpoint raised to power 2 to get UMIs and not log2(umis)
   
 
@@ -124,7 +133,12 @@ generated quantities {
   cell_slope_after_percent = 1 - pow(2,cell_slope_after*sd_log2_ncells + mean_log2_ncells);
   umi_slope_before_percent = 1 - pow(2,umi_slope_before*sd_log2_umis_per_cell + mean_log2_umis_per_cell );
   umi_slope_after_percent = 1 - pow(2,umi_slope_after*sd_log2_umis_per_cell + mean_log2_umis_per_cell );
-  
+
+  cell_slope_before_destandardized = (cell_slope_before*sd_log2_ncells) + mean_log2_ncells ;
+  cell_slope_after_destandardized = (cell_slope_after*sd_log2_ncells) + mean_log2_ncells;
+  umi_slope_before_destandardized = (umi_slope_before*sd_log2_umis_per_cell) + mean_log2_umis_per_cell ;
+  umi_slope_after_destandardized = (umi_slope_after*sd_log2_umis_per_cell) + mean_log2_umis_per_cell ;
+
   cell_slope_difference =  cell_slope_after -  cell_slope_before;  
   cell_after_over_before = cell_slope_after /  cell_slope_before;  
   cell_before_over_after = cell_slope_before / cell_slope_after;  

@@ -17,7 +17,7 @@ import requests
 # --output=%j.out
 # snakemake -j 1 -s snakemake4_run_pystan.py --keep-going --rerun-incomplete -pn
 # snakemake -j 100 -s snakemake4_run_pystan.py --keep-going --rerun-incomplete --latency-wait 50 --cluster "sbatch -A lpachter -t 500  -o ./logs/output.%a.pystan "
-# snakemake -j 300 -s snakemake4_run_pystan.py --jobname "{wildcards.dataset_project_id}.{wildcards.dataset_sample_id}.{jobid}" --keep-going --rerun-incomplete --latency-wait 50 --cluster "sbatch -A lpachter -t 5000  --mem-per-cpu=20200 --output=./logs/snakemake4_run_pystan%j.logs"
+# snakemake -j 300 -s snakemake4_run_pystan.py --jobname "{jobid}.{wildcards.dataset_project_id}.{wildcards.dataset_sample_id}.pystan" --keep-going --rerun-incomplete --latency-wait 50 --cluster "sbatch -A lpachter -t 5000  --mem-per-cpu=20200 --output=./logs/snakemake4_run_pystan%j.logs"
 
 
 url="https://docs.google.com/spreadsheets/d/"+ \
@@ -57,8 +57,8 @@ rule run_pystan:
         print('   💝 💝 💝 💝 💝    PYSTAN PROCESSING DATASET: ', ds, ' PROJECT: ', project, '   💝 💝 💝 💝 💝    ')
         df = pd.read_csv(input.scvi_final_summary_file).sort_values(["sampled_cells", "total_UMIs"], ascending = (True, True))
         
-        stan_model = ps.StanModel(file="piecewise_stan_model.stan", 
-                          model_name = "piecewise_stan_model")
+        stan_model = ps.StanModel(file="transformed_piecewise_stan_model.stan", 
+                          model_name = "transformed_piecewise_stan_model")
 
         os.environ['STAN_NUM_THREADS'] = "10"
 
@@ -71,7 +71,7 @@ rule run_pystan:
 
 
         stan_fit = stan_model.sampling(data=data_dict,
-                               iter=10000,
+                               iter=20000,
 #                                 warmup = 15000,
                                 n_jobs=8,
                                 chains=8,
@@ -100,6 +100,10 @@ rule run_pystan:
                                    'bp_umis',
                                    'before_variance',
                                    'after_variance',
+                                   'cell_slope_before_destandardized',
+                                   'cell_slope_after_destandardized',
+                                   'umi_slope_before_destandardized',
+                                   'umi_slope_after_destandardized',
                                    'umi_slope_before',
                                    'umi_slope_after',
                                    'cell_slope_before',
